@@ -2,7 +2,7 @@ import os
 
 
 original_dir = "/storage/bfe_maruvka/gaiafr/Research_project/WGS_SNVs_indels_analysis_project/MS_Analysis/Google_Cloud_MSMuTect_final_output_new_May2025_run/MSMuTect_called_mut_filt/"
-with open("relevant_tsv.txt", "r") as tsvs_list:
+with open("../relevant_tsv.txt", "r") as tsvs_list:
     lines = tsvs_list.readlines()
 # print(lines)
 for l in lines:

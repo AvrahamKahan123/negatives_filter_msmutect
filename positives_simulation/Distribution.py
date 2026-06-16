@@ -1,5 +1,6 @@
-from typing import Dict, Union
-from dataclasses import dataclass
+import random
+from typing import Dict, Union, List
+from dataclasses import dataclass, field
 
 from positives_simulation.COLUMN_NAMES import COLUMN_NAMES
 from positives_simulation.repeat_support_handling import dict_to_csv_representation, return_na_if_none_else_return_input
@@ -13,6 +14,22 @@ class Distribution:
     locus_length: int
     reference_size: int
     repeat_lengths: Dict[int, int]
+    _probability_map: List[int] = field(default_factory=list)
+
+    def num_reads(self):
+        return sum(self.repeat_lengths.values())
+
+    def construct_probability_map(self):
+        probability_map = []
+        for motif_repeats in self.repeat_lengths:
+            for weight in range(self.repeat_lengths[motif_repeats]):
+                probability_map.append(motif_repeats)
+        self._probability_map = probability_map
+
+    def randomly_select_read(self):
+        if self._probability_map is None or ((self._probability_map) != sum(self.repeat_lengths.values())):
+            self.construct_probability_map()
+        return self._probability_map[random.randint(0, len(self._probability_map) - 1)]
 
     def __str__(self):
         return f"{self.pattern},{self.allele_1},{return_na_if_none_else_return_input(self.allele_2)},{self.locus_length},{self.reference_size},{dict_to_csv_representation(self.repeat_lengths)}"

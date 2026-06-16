@@ -16,13 +16,12 @@
 # plt.grid(True)
 # plt.tight_layout()
 # plt.show()
-
-
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load CSV
-df = pd.read_csv("../results/complex_simulation_stats/percentages_table.csv")
+df = pd.read_csv("../../results/complex_simulation_stats/percentages_table.csv")
 
 # Use the first column as x, and the rest as y
 x = df.iloc[:, 0]
@@ -35,7 +34,8 @@ for col in y_cols:
 
 plt.xlabel(df.columns[0])  # label x-axis with the first column name
 plt.ylabel("Mutation Called Percentage")
-plt.title("Mutation Percentages Per Different Purities")
+plt.title("Simulated Purity Adjustment Approach")
+plt.xticks(np.arange(0, 1.1, 0.1))
 plt.legend()
 plt.grid(True)
 plt.tight_layout()

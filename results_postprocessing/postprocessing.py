@@ -38,7 +38,7 @@ def allele_num(df, new_col, allele1, allele2=None, allele3=None, allele4=None):
 
 
 def print_row(df, r):
-    print(f"REF: {df.loc[r, 'REFERENCE_REPEATS']}, N1: {df.loc[r, 'NORMAL_ALLELE_1']}, N2: {df.loc[r, 'NORMAL_ALLELE_2']},T1: {df.loc[r, 'TUMOR_ALLELE_1']}, T2: {df.loc[r, 'TUMOR_ALLELE_2']}")
+    print(f"REF: {df.loc[r, 'REFERENCE_REPEATS']}, N1: {df.loc[r, 'NORMAL_ALLELE_1']}, N2: {df.loc[r, 'NORMAL_ALLELE_2']},T1: {df.loc[r, 'TUMOR_ALLELE_1']}, T2: {df.loc[r, 'TUMOR_ALLELE_2']}, T3: {df.loc[r, 'TUMOR_ALLELE_3']}")
 
 def BTR_remove(df):
     df["REFERENCE_REPEATS"] = np.floor(df["REFERENCE_REPEATS"])
@@ -63,7 +63,7 @@ def BTR_remove(df):
         )
     )
     croc=1
-    # Condition 2: 2 normal alleles and 2 tumor alleles
+    # Condition 2: 2 normal alleles and 2 tumor alleles. Only different allele is REFERENCE
     cond2 = (
         (N2 != 0) & (T3 == 0) &
         (
@@ -72,7 +72,7 @@ def BTR_remove(df):
         )
     )
 
-    # Condition 3: 2 normal alleles and 3 tumor alleles
+    # Condition 3: 2 normal alleles and 3 tumor alleles. ONLY DIFFERENT ALLELE is REFERECNE
     cond3 = (
         (N2 != 0) & (T4 == 0) & (T3 != 0) &
         (
@@ -88,7 +88,9 @@ def BTR_remove(df):
     # print(cond3.sum())
 
     # Return dataframe with BTR mutations removed
-
+    if remove_mask.sum() > 0:
+        rdf = df[remove_mask]
+        croc=1
     return df[~remove_mask].copy()
 
 
@@ -244,8 +246,11 @@ def create_final_tables_and_filtered_files(input_dir: str, output_files_dir: str
     total_per_motif_mut_counts = []
 
     args = create_args_tuples(files, case_names, output_files_dir)
-    with multiprocessing.Pool(processes=16) as pool:
-        results = pool.starmap(process_and_save_individual_file, args)
+    results = []
+    for arg in args:
+        results.append(process_and_save_individual_file(*arg))
+    # with multiprocessing.Pool(processes=16) as pool:
+    #     results = pool.starmap(process_and_save_individual_file, args)
     for case_name, result in zip(case_names, results):
         total_mut_counts_list.append(result.total_mut_count)
         total_per_motif_mut_counts.append(result.mut_count_per_motif)
@@ -269,5 +274,5 @@ if __name__ == '__main__':
     ## CHANGE HERE ##
     # create_final_tables_and_filtered_files("INPUT_DIR", "OUTPUT_FILES_DIR", "OUTPUT_TABLES_DIR")
 
-    create_final_tables_and_filtered_files("../data/positives_complex_simulation", "../data/complex_simulation_filtered", "../results/complex_simulation_stats")
+    create_final_tables_and_filtered_files("../data/known/input_data", "../data/known/filtered", "../data/known/output_tables")
     # pass

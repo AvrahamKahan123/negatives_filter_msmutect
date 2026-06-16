@@ -410,7 +410,7 @@ def lookup_test(test_name: str) -> Test:
         "LOCUS_LENGTH": Test(locus_length, "locus_length", []),
         "MOTIF_LENGTH": Test(motif_length, "motif_length", []),
         "NORMAL_SUPPORT": Test(normal_support, "normal_support", []),
-        "PURITY": Test(purity_filter, "purity", [connect_to_purity_db()]),
+        # "PURITY": Test(purity_filter, "purity", [connect_to_purity_db()]),
         "NOISELESS_FILTER": Test(noiseless_filter, "noiseless_filter", []),
         "NON_ALLELE_TUMOR_FRACTION": Test(non_allele_tumor_fraction, "non_allele_tumor_fraction", []),
         "NOISELESS_FILTER_NO_UTF": Test(noiseless_filter_without_utf, "NOISELESS_FILTER_NO_UTF", [])
@@ -447,11 +447,11 @@ def main(test_name: str, sample_choice: SampleChoice, parallel: bool = True):
         results.append(result)
 
     all_stats = pd.concat(list(results), ignore_index=True)
-    all_stats.to_csv(f"{os.path.join(results_directory(), prefix)}_{test_name}.csv", index=False)
+    all_stats.to_csv(f"{os.path.join(results_directory(), prefix)}_{test_name}_6_16_26.csv", index=False)
 
 
 if __name__ == '__main__':
     st = time.time()
-    main(test_name="NOISELESS_FILTER_NO_UTF", sample_choice=SampleChoice(TCGA=True, test_dataset_only=False), parallel=True)
+    main(test_name="NOISELESS_FILTER_NO_UTF", sample_choice=SampleChoice(TCGA=False, test_dataset_only=False), parallel=True)
     e = time.time()
     print(e-st)

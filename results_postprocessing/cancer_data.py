@@ -9,7 +9,9 @@ from enums import MSI_CLASSIFICATION
 
 def load_cancer_type_metadata(fp="C:/Users/avrah/MaruvkaLab/Texas_samples_organization/tcga_metadata_upd.txt") -> Dict[str, str]:
     if sys.platform.startswith("linux"):
-        fp="/mnt/c/Users/avrah/MaruvkaLab/Texas_samples_organization/tcga_metadata_upd.txt"
+        # fp="/mnt/c/Users/avrah/MaruvkaLab/Texas_samples_organization/tcga_metadata_upd.txt"
+        # fp="/mnt/c/Users/avrah/MaruvkaLab/Texas_samples_organization/tcga_metadata_upd.txt"
+        fp = "/home/avraham/MaruvkaLab/msmutect_postprocessing/data/tcga_metadata_upd.txt"
     cancer_type_lookup_table = dict()
     with open(fp, 'r') as metadata_file:
         metadata_lines = metadata_file.readlines()
@@ -48,11 +50,17 @@ def load_tcga_samples(msi_dir: str, mss_dir: str, mss_only: bool, forced_cancer_
 
 
 def data_directory():
-    return "C:/Users/avrah/MaruvkaLab/post_processing_code_for_australians/data"
+    if sys.platform.startswith("linux"):
+        return "/home/avraham/MaruvkaLab/msmutect_postprocessing/data"
+    else:
+        return "C:/Users/avrah/MaruvkaLab/post_processing_code_for_australians/data"
 
 
 def results_directory():
-    return "C:/Users/avrah/MaruvkaLab/post_processing_code_for_australians/results"
+    if sys.platform.startswith("linux"):
+        return "/home/avraham/MaruvkaLab/msmutect_postprocessing/results"
+    else:
+        return "C:/Users/avrah/MaruvkaLab/post_processing_code_for_australians/results"
 
 
 def graphs_directory():

@@ -1,6 +1,7 @@
 import os, re, csv, random, sys
 from collections import defaultdict
 from dataclasses import dataclass
+from itertools import islice
 from typing import List, Dict
 
 from positives_simulation.COLUMN_NAMES import COLUMN_NAMES
@@ -30,9 +31,12 @@ class PatientDBengine:
 
     def get_random_entry(self, keys: List[int]) -> Distribution:
         self.validate_num_keys(keys)
-        relevant_distributions = self.db["_".join([str(key) for key in keys])]
-        if len(relevant_distributions) == 0:
-            raise RuntimeError(f"No distributions found for given keys")
+        search_key = "_".join([str(key) for key in keys])
+        if search_key not in self.db:
+            return Distribution(None, None, None, None, None, repeat_lengths={}) # an insane way of indicating no matches were found. need to do better
+        relevant_distributions = self.db[search_key]
+        # if len(relevant_distributions) == 0:
+        #     raise RuntimeError(f"No distributions found for given keys")
         random_num = random.randint(0,len(relevant_distributions)-1)
         return relevant_distributions[random_num]
 
@@ -53,7 +57,7 @@ class PatientDBengine:
             if row[pair[0]] == "NA":
                 return repeat_lengths
             else:
-                repeat_lengths[int(pair[0])] = int(row[pair[1]])
+                repeat_lengths[int(row[pair[0]])] = int(row[pair[1]])
         return repeat_lengths
 
     def zero_if_NA_otherwise_self(self, x: str) -> str:
@@ -63,7 +67,7 @@ class PatientDBengine:
         distributions = []
         with open(filepath, "r") as f:
             reader = csv.DictReader(f)
-            for row in reader:
+            for row in islice(reader, 1000):
                 distributions.append(Distribution(row[COLUMN_NAMES.PATTERN],
                                                   int(row[COLUMN_NAMES.ALLELE_1]),
                                                   int(self.zero_if_NA_otherwise_self(row[COLUMN_NAMES.ALLELE_2])),

@@ -27,7 +27,7 @@ def main():
     TCGA_OR_A5LB = Case("TCGA-OR-A5LB", 253848)
     cases: Dict[str, Case] = {case.case_name: case for case in [TCGA_A6_5661, TCGA_AJ_A3BH, TCGA_AP_A05N, TCGA_FI_A2D4, TCGA_OR_A5LB]}
 
-    with open("../results/complex_simulation_stats/total_mut_count_table.txt", "r") as file:
+    with open("../../results/complex_simulation_stats/total_mut_count_table.txt", "r") as file:
 
         reader = csv.DictReader(file, delimiter='\t')
         for row in reader:
@@ -37,7 +37,7 @@ def main():
             case = cases[case_name]
             case.add_percentage(float(purity), int(row["Total_mut_count"]))
     different_purities = purities()
-    with open("../results/complex_simulation_stats/percentages_table.csv", "w") as file:
+    with open("../../results/complex_simulation_stats/percentages_table.csv", "w") as file:
         file.write("purity,"+",".join([case.case_name for case in cases.values()])+"\n")
         for p in different_purities:
             file.write(",".join([str(p)]+[str(case.percentages_dict[p]) for case in cases.values()])+"\n")

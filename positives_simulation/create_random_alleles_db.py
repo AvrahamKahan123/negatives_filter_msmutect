@@ -67,6 +67,8 @@ def create_write_request_from_row(row: dict) -> Union[DBwriteRequest, None]:
                                                                                               0))]
     if heterozygous:
         keys = [int(row["NORMAL_ALLELE_1"]), int(row["NORMAL_ALLELE_2"])]
+    elif not is_reference:
+        keys = [flexint(row["REFERENCE_REPEATS"]), int(row["NORMAL_ALLELE_1"])]
     else:
         keys = [int(row["NORMAL_ALLELE_1"])]
     distribution = create_distribution_from_row(row)
@@ -89,8 +91,8 @@ def create_patient_write_requests(patient_filepath: str) -> List[DBwriteRequest]
                 e = time.time()
                 print(e-st)
                 st=time.time()
-            if i == 500_000:
-                return write_requests
+            # if i == 500_000:
+            #     return write_requests
     return write_requests
 
 
@@ -103,7 +105,11 @@ def add_patient_to_db(patient_name: str, input_patient_path: str):
 
 def read_db(patient_name: str):
     alleles_db = RandomAllelesDB("alleles.db")
+    alleles_db.load_patient("hg001")
 
 if __name__ == "__main__":
-    read_db("hg001")
+    # read_db("hg001")
     # add_patient_to_db("hg001", "/home/avraham/MaruvkaLab/msmutect_postprocessing/data/full_gib_files/msmutect_normal0_tumor0.full.mut.tsv")
+    add_patient_to_db("hg002", "/home/avraham/MaruvkaLab/msmutect_postprocessing/data/full_gib_files/msmutect_normal0_tumor0.full.mut.tsv")
+    add_patient_to_db("hg003", "/home/avraham/MaruvkaLab/msmutect_postprocessing/data/full_gib_files/msmutect_normal0_tumor0.full.mut.tsv")
+    add_patient_to_db("hg004", "/home/avraham/MaruvkaLab/msmutect_postprocessing/data/full_gib_files/msmutect_normal0_tumor0.full.mut.tsv")
