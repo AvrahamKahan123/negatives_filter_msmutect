@@ -452,6 +452,6 @@ def main(test_name: str, sample_choice: SampleChoice, parallel: bool = True):
 
 if __name__ == '__main__':
     st = time.time()
-    main(test_name="NOISELESS_FILTER_NO_UTF", sample_choice=SampleChoice(TCGA=False, test_dataset_only=False), parallel=True)
+    main(test_name="NOISELESS_FILTER_NO_UTF", sample_choice=SampleChoice(TCGA=False, test_dataset_only=False), parallel=False)
     e = time.time()
     print(e-st)
