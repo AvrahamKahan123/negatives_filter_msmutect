@@ -253,9 +253,10 @@ def avraham_filter(mutations_df: pd.DataFrame, normal_support_threshold: int = 8
 
     mutations_df_filtered = mutations_df[
         (mutations_df["NORMAL_S"] >= normal_support_threshold) &
-        (mutations_df["UNIQUE_TUMOR_FRACTION"] > UTF) &
-        (mutations_df["THIRD_AND_LATER_NORMAL_PROPORTION"] < third_and_later_fraction) &
-        (mutations_df[COLUMN.FISHER_TEST_P_VALUE] < fisher_threshold)
+        # (mutations_df["UNIQUE_TUMOR_FRACTION"] > UTF) &
+        (mutations_df["THIRD_AND_LATER_NORMAL_PROPORTION"] <= third_and_later_fraction) &
+        (mutations_df[COLUMN.FISHER_TEST_P_VALUE] <= fisher_threshold) &
+        (mutations_df[f"TUMOR_{allele_column_name(mutations_df)}_2"] != 0)
         ]
     return mutations_df_filtered
 
@@ -263,9 +264,15 @@ def avraham_filter(mutations_df: pd.DataFrame, normal_support_threshold: int = 8
 def noiseless_filter_without_utf(sample: Sample) -> Dict[str, object]:
     thresholds = list(range(8, 16))
     mutations_df = pd.read_csv(sample.mutations_tsv_fp, delimiter="\t")
+    # mutations_df_filtered = yossi_filter(mutations_df, UTF=0.0, fisher_threshold=0.01)
+
     mutations_df_filtered = avraham_filter(mutations_df, UTF=0.0, fisher_threshold=0.01)
+
+
     num_mutations_per_threshold = evaluate_passes_each_threshold(mutations_df_filtered, "NORMAL_S", thresholds,
                                                                  operator.ge)
+    # tmp_df = mutations_df_filtered[mutations_df_filtered["NORMAL_S"]>=10]
+    # tmp_df.to_csv(f"/home/avraham/MaruvkaLab/msmutect_postprocessing/results/GIAB_results_per_pattern_length/{os.path.basename(sample.mutations_tsv_fp)}.tsv", sep="\t", index=False)
     mutations_per_threshold = (
                 {"CASE": sample.sample_name(), "CLASSIFICATION": sample.classification, "ORIGINAL": len(mutations_df)} |
                 {str(thresh): muts for thresh, muts in zip(thresholds, num_mutations_per_threshold)})
@@ -299,9 +306,9 @@ def normal_threshold_per_locus(mutations_df: pd.DataFrame, noisy_db: NoisyLocusD
         thresholds[row_num] = current_threshold
     return thresholds
 
-def yossi_filter(mutations_df: pd.DataFrame, noisy_db: NoisyLocusDB) -> pd.DataFrame:
-    normal_support_threshold_noiseless = 8
-    normal_support_threshold_noisy = 15
+def yossi_filter(mutations_df: pd.DataFrame, noisy_db: NoisyLocusDB, name = " ") -> pd.DataFrame:
+    normal_support_threshold_noiseless = 9
+    normal_support_threshold_noisy = 16
     normal_third_motif_plus_threshold = 0.1
     fisher_threshold = 0.01
     # UTF = 0
@@ -316,12 +323,16 @@ def yossi_filter(mutations_df: pd.DataFrame, noisy_db: NoisyLocusDB) -> pd.DataF
 
     threshold_per_locus = normal_threshold_per_locus(mutations_df, noisy_db, normal_support_threshold_noiseless, normal_support_threshold_noisy)
     print((threshold_per_locus==normal_support_threshold_noisy).mean())
-    mutations_df_filtered = mutations_df[
-        (mutations_df["NORMAL_S"] > threshold_per_locus) &
-        (mutations_df[COLUMN.FISHER_TEST_P_VALUE] <= fisher_threshold) &
-        (mutations_df["THIRD_AND_LATER_NORMAL_PROPORTION"] < normal_third_motif_plus_threshold)
-        ]
-
+    try:
+        mutations_df_filtered = mutations_df[
+            (mutations_df["NORMAL_S"] >= threshold_per_locus) &
+            (mutations_df[COLUMN.FISHER_TEST_P_VALUE] <= fisher_threshold) &
+            (mutations_df["THIRD_AND_LATER_NORMAL_PROPORTION"] <= normal_third_motif_plus_threshold) &
+            (mutations_df[f"TUMOR_{allele_column_name(mutations_df)}_2"] != 0)
+            ]
+    except:
+        print(f"FAILED::: {name}")
+        exit(-1)
     return mutations_df_filtered
 
 
@@ -330,8 +341,8 @@ def compare_filters(sample: Sample, noisy_db: NoisyLocusDB) -> Dict[str, object]
     mutations_df = pd.read_csv(sample.mutations_tsv_fp, delimiter="\t")
     if sample.classification==MSI_CLASSIFICATION.MSI:
         croc=1
-    yossi_filtered = yossi_filter(mutations_df.copy(), noisy_db)
-    avraham_filtered = avraham_filter(mutations_df.copy())
+    yossi_filtered = yossi_filter(mutations_df.copy(), noisy_db, name=sample.sample_name())
+    avraham_filtered = avraham_filter(mutations_df.copy(), normal_support_threshold=10, fisher_threshold=0.01)
     mutations_per_threshold = ({"CASE": sample.sample_name(), "CLASSIFICATION": sample.classification, "ORIGINAL": len(mutations_df)} |
                                {"AVRAHAM_FILTER": len(avraham_filtered), "YOSSI_FILTER": len(yossi_filtered)})
     return mutations_per_threshold
@@ -374,7 +385,7 @@ def tabulate_statistic(samples: SamplesSet, func: Callable, args: list) -> pd.Da
     return ret
 
 
-def tabulate_statistic_parallel(samples: SamplesSet, func: Callable, args: list, num_cpus: int = 8) -> pd.DataFrame:
+def tabulate_statistic_parallel(samples: SamplesSet, func: Callable, args: list, num_cpus: int = 9) -> pd.DataFrame:
     work_chunks = split_into_work_chunks(samples)
     with mp.Pool(processes=num_cpus) as pool:
         results = pool.starmap(tabulate_statistic, [(chunk, func, args) for chunk in work_chunks])
@@ -413,8 +424,8 @@ def lookup_test(test_name: str) -> Test:
         # "PURITY": Test(purity_filter, "purity", [connect_to_purity_db()]),
         "NOISELESS_FILTER": Test(noiseless_filter, "noiseless_filter", []),
         "NON_ALLELE_TUMOR_FRACTION": Test(non_allele_tumor_fraction, "non_allele_tumor_fraction", []),
-        "NOISELESS_FILTER_NO_UTF": Test(noiseless_filter_without_utf, "NOISELESS_FILTER_NO_UTF", [])
-        # "COMPARE_FILTERS": Test(compare_filters, "compare_filters", [NoisyLocusDB()]) # not ideal; loads even when going to be used!
+        "NOISELESS_FILTER_NO_UTF": Test(noiseless_filter_without_utf, "NOISELESS_FILTER_NO_UTF", []),
+        "COMPARE_FILTERS": Test(compare_filters, "compare_filters", [NoisyLocusDB()]) # not ideal; loads even when going to be used!
     }
     if test_name not in tests:
         raise RuntimeError(f"Unrecognized test: {test_name}\nRecognized tests are {tests.keys()}")
@@ -447,11 +458,15 @@ def main(test_name: str, sample_choice: SampleChoice, parallel: bool = True):
         results.append(result)
 
     all_stats = pd.concat(list(results), ignore_index=True)
-    all_stats.to_csv(f"{os.path.join(results_directory(), prefix)}_{test_name}_6_16_26.csv", index=False)
+    all_stats.to_csv(f"{os.path.join(results_directory(), prefix)}_{test_name}_9_17.csv", index=False)
 
 
 if __name__ == '__main__':
     st = time.time()
-    main(test_name="NOISELESS_FILTER_NO_UTF", sample_choice=SampleChoice(TCGA=False, test_dataset_only=False), parallel=False)
+    main(test_name="COMPARE_FILTERS", sample_choice=SampleChoice(TCGA=False, test_dataset_only=False), parallel=False)
+
+    # main(test_name="COMPARE_FILTERS", sample_choice=SampleChoice(TCGA=True, test_dataset_only=False), parallel=True)
+    # main(test_name="NOISELESS_FILTER_NO_UTF", sample_choice=SampleChoice(TCGA=False, test_dataset_only=False), parallel=False)
+
     e = time.time()
     print(e-st)

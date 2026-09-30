@@ -16,7 +16,7 @@ def split_into_hg005_and_nonhg005(gib_df: pd.DataFrame) -> Tuple[pd.DataFrame, p
 
 
 def yossi_vs_avr_filter():
-    gib_df: pd.DataFrame = pd.read_csv(os.path.join(results_directory(), "gib_COMPARE_FILTERS.csv"))
+    gib_df: pd.DataFrame = pd.read_csv(os.path.join(results_directory(), "gib_COMPARE_FILTERS_9_2.csv"))
     _, gib_df = split_into_hg005_and_nonhg005(gib_df)
     df_melted = gib_df.melt(value_vars=['ORIGINAL', 'AVRAHAM_FILTER', 'YOSSI_FILTER'], var_name='Filter', value_name='Num Mutations')
     plt.yticks(list(range(0, 2000, 100)))
@@ -68,7 +68,8 @@ def plot_mss_vs_gib(tcga_csv: str, gib_csv: str, column_name: str, title: str = 
 
 
 if __name__ == '__main__':
+    yossi_vs_avr_filter()
     for column in ["ORIGINAL"]+list(range(8, 16)):
-        plot_mss_vs_gib("../results/full_tcga_NOISELESS_FILTER_NO_UTF.csv", "../results/gib_NOISELESS_FILTER_NO_UTF.csv",
-                        f"{column}", f"{column}", save=True)
+        plot_mss_vs_gib("../results/full_tcga_NOISELESS_FILTER_NO_UTF_TCGA_9_1.csv", "../results/gib_NOISELESS_FILTER_NO_UTF_9_2.csv",
+                        f"{column}", f"{column}", save=False)
     # yossi_vs_avr_filter()
