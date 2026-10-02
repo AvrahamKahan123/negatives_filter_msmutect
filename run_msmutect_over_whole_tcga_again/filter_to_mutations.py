@@ -43,7 +43,14 @@ def _open_write(path: str, gzipped: bool):
 def filter_sample(sample: str, force: bool = False, quiet: bool = False) -> str:
     source = config.source_path(sample)
     destination = config.filtered_path(sample)
-    if not os.path.exists(source):
+    state, detail = config.path_state(source)
+    if state == config.UNREADABLE:
+        # distinguish a storage fault from an absent file -- os.path.exists() calls both False
+        raise SystemExit(f"ERROR: input exists but cannot be read: {source}\n"
+                         f"       {detail}\n"
+                         f"       Storage fault, not a pipeline problem. Re-submit this sample "
+                         f"once the filesystem serves it again.")
+    if state == config.MISSING:
         raise SystemExit(f"ERROR: input not found: {source}")
     if os.path.exists(destination) and not force:
         if not quiet:

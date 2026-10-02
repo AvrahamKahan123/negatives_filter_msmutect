@@ -100,6 +100,22 @@ that sample's mutation count (~6.6 ms per mutation locus).
   recording a silent success.
 - **Columns by name.** `CALL` is located from the header, not by index — the index shifts
   between format versions (step 2 drops two columns and adds one).
+- **Unreadable inputs are reported, not dropped.** `os.path.exists()` returns False both for
+  a file that is absent and for one the filesystem cannot `stat` (an `Input/output error`
+  from `/storage`, a dead mount, permissions). Those mean opposite things, so the job lists
+  check the errno instead: *missing* is normal sequencing, *unreadable* is a storage fault
+  and gets its own loud warning plus `jobs/step<N>_*_unreadable.txt`. Without that
+  distinction a batch of EIO files would silently vanish from the final results.
+
+### "N not ready" vs "EXIST BUT CANNOT BE READ"
+
+`not ready` means the previous step hasn't produced that sample's input yet — expected while
+a batch is draining; re-run `make_job_lists` later and the number shrinks.
+
+The `*** EXIST BUT CANNOT BE READ ***` block is different and worth acting on: the source
+file is listed by the directory but the filesystem errors on it. Those samples are excluded
+from the job list and recorded in `jobs/*_unreadable.txt`. Re-run `make_job_lists` once
+storage recovers to pick them up.
 
 ## Files
 

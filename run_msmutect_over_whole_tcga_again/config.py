@@ -7,6 +7,7 @@ upper-cased (condor's `getenv = true` passes your shell through to the jobs):
     WORK_ROOT=/storage/bfe_maruvka/avrahamk/scratch_run condor_submit step1_filter.sub
 """
 
+import errno
 import json
 import os
 import sys
@@ -82,6 +83,27 @@ def sample_name(path: str) -> str:
         if name.endswith(suffix):
             return name[: -len(suffix)]
     return os.path.splitext(name)[0]
+
+
+OK, MISSING, UNREADABLE = "ok", "missing", "unreadable"
+
+
+def path_state(path: str) -> tuple:
+    """-> (OK | MISSING | UNREADABLE, detail or None).
+
+    os.path.exists() returns False for BOTH an absent file and one the filesystem cannot
+    stat -- /storage throwing EIO, a dead mount, a permissions problem. Those mean opposite
+    things here: absent is normal (the previous step has not run yet), unreadable is a
+    storage fault that would otherwise drop the sample from the batch without a word.
+    """
+    try:
+        os.stat(path)
+        return OK, None
+    except FileNotFoundError:
+        return MISSING, None
+    except OSError as e:
+        name = errno.errorcode.get(e.errno, str(e.errno))
+        return UNREADABLE, f"{name}: {e.strerror}"
 
 
 def require(path: str, what: str):

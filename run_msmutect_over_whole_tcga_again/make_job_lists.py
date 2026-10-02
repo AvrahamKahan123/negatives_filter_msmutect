@@ -37,13 +37,13 @@ def _done(step: int, sample: str) -> bool:
     return os.path.exists(config.msmutect_output_path(sample))
 
 
-def _ready(step: int, sample: str) -> bool:
-    """Is this step's INPUT present? Keeps a list from containing jobs that must fail."""
+def _input_path(step: int, sample: str) -> str:
+    """The file this step reads."""
     if step == 1:
-        return os.path.exists(config.source_path(sample))
+        return config.source_path(sample)
     if step == 2:
-        return os.path.exists(config.filtered_path(sample))
-    return os.path.exists(config.filtered_wgermline_path(sample))
+        return config.filtered_path(sample)
+    return config.filtered_wgermline_path(sample)
 
 
 def write_list(step: int, samples: list, include_done: bool = False) -> str:
@@ -52,8 +52,16 @@ def write_list(step: int, samples: list, include_done: bool = False) -> str:
     # condor will not create these itself, and a missing log dir kills the submit
     os.makedirs(os.path.join(config.LOGS_DIR, f"step{step}"), exist_ok=True)
 
-    ready = [s for s in samples if _ready(step, s)]
-    not_ready = len(samples) - len(ready)
+    ready, missing, unreadable = [], [], []
+    for sample in samples:
+        state, detail = config.path_state(_input_path(step, sample))
+        if state == config.OK:
+            ready.append(sample)
+        elif state == config.MISSING:
+            missing.append(sample)
+        else:
+            unreadable.append((sample, detail))
+
     todo = ready if include_done else [s for s in ready if not _done(step, s)]
     done = len(ready) - len(todo)
 
@@ -65,8 +73,27 @@ def write_list(step: int, samples: list, include_done: bool = False) -> str:
     print(f"step {step}: {len(todo):,} job(s) -> {path}")
     if done:
         print(f"         {done:,} already done (--include-done to redo)")
-    if not_ready:
-        print(f"         {not_ready:,} not ready (step {step - 1} has not produced their input)")
+    if missing:
+        where = "input_dir" if step == 1 else f"step {step - 1} has not produced their input"
+        print(f"         {len(missing):,} not ready ({where})")
+
+    if unreadable:
+        # NOT the same as missing: the file is there but the filesystem cannot read it.
+        # Left out of the job list, but recorded -- silently dropping these would give an
+        # incomplete final dataset with nothing to show for it.
+        bad_path = os.path.join(config.JOBS_DIR, filename.replace(".txt", "_unreadable.txt"))
+        with open(bad_path, "w") as f:
+            for sample, detail in unreadable:
+                f.write(f"{sample}\t{detail}\n")
+        print(f"\n  *** {len(unreadable):,} input file(s) EXIST BUT CANNOT BE READ ***")
+        for sample, detail in unreadable[:5]:
+            print(f"        {sample}  ({detail})")
+        if len(unreadable) > 5:
+            print(f"        ... and {len(unreadable) - 5:,} more")
+        print(f"      full list -> {bad_path}")
+        print( "      This is a storage fault, not a pipeline state. These samples are NOT")
+        print( "      in the job list and will be missing from the final results until the")
+        print(f"      filesystem serves them again; re-run this to pick them up.\n")
     return path
 
 

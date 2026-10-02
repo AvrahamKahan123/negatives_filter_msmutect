@@ -21,4 +21,13 @@ error  = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)
 RequestMemory = 1GB
 request_cpus  = 1
 
+# Cap how many jobs are in flight at once (idle + running). Without it condor queues the
+# whole list and runs as many as the pool will give you.
+#
+# NOTE these jobs all stream large .gz files off the SAME filesystem
+# (/storage/bfe_maruvka/gaiafr/...), the one that has been returning Input/output errors.
+# 300 concurrent readers is a lot of pressure on it -- if the EIO count climbs when you
+# raise this, lower it. Start smaller and work up.
+max_materialize = 300
+
 queue sample from jobs/step1_filter.txt

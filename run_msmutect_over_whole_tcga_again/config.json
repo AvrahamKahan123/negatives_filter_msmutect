@@ -6,11 +6,11 @@
 
   "work_root": "/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again",
 
-  "_msmutect_path": "Absolute path to msmutect.sh ON THE CLUSTER. Step 3 fails fast with a clear message if this is wrong.",
-  "msmutect_path": "/storage/bfe_maruvka/avrahamk/MSMuTect/msmutect.sh",
+  "msmutect_path": "/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again/MSMuTect_4/msmutect.sh",
+  "_msmutect_path": "/storage/bfe_maruvka/avrahamk/MSMuTect/msmutect.sh",
 
-  "_repo_root": "Checkout of msmutect_postprocessing, needed to import converting_from_old_format_to_new (step 2) and running_from_file (step 3). null = the parent of this directory, which is right when the jobs run from the checkout.",
-  "repo_root": null,
+  "repo_root": "/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again/negatives_filter_msmutect/",
+  "_repo_root": null,
 
   "_gzip_intermediates": "Write filtered/ and filtered_wgermline/ as .gz. Everything downstream reads .gz transparently.",
   "gzip_intermediates": true,
