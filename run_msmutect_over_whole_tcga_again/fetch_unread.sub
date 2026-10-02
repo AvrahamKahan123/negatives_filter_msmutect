@@ -1,0 +1,44 @@
+# Recover the files the main storage cannot read, from the backup host.
+#   avrahamk@tech-bfe-st01:.../Folders_backup/.../May2025_run/$(filename)
+#     -> /storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again/unread/$(filename)
+#
+#   ./make_fetch_list.sh          # one clean column, minus anything already recovered
+#   condor_submit fetch_unread.sub
+#
+# SSH MUST BE KEY-BASED. Condor jobs have no tty, so a password prompt cannot be answered;
+# SSH_OPTS sets BatchMode=yes so such a job fails immediately instead of hanging until it is
+# evicted. Check it works from an execute-node-like shell first:
+#
+#   ssh -o BatchMode=yes avrahamk@tech-bfe-st01 true && echo OK
+#
+# If that prompts or fails, set up a key (and export SSH_KEY=/path/to/key), or just run the
+# fetch on the login node instead:
+#
+#   while read -r f; do ./fetch_one_unread.sh "$f"; done < fetch_list.txt
+
+universe     = vanilla
+getenv       = true
+ShouldTransferFiles = No
+initialdir   = .
+
+executable   = fetch_one_unread.sh
+arguments    = $(filename)
+
+log    = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/fetch/$(filename).log
+output = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/fetch/$(filename).out
+error  = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/fetch/$(filename).err
+
+RequestMemory = 512MB
+request_cpus  = 1
+
+# These all pull from ONE backup host over the network. Too many at once will throttle each
+# other and may trip the server's connection limits -- this is bandwidth-bound, not
+# cpu-bound, so more jobs does not mean faster. Raise carefully.
+max_materialize = 10
+
+# A transfer that dies mid-way leaves nothing behind (the script writes a .partial and only
+# renames on success), so retrying is always safe.
+max_retries   = 3
+requirements  = (NumJobStarts < 4)
+
+queue filename from fetch_list.txt
