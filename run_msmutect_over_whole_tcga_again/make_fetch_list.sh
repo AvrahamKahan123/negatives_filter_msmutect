@@ -25,6 +25,9 @@ if [ ! -r "$UNREAD_LIST" ]; then
 fi
 
 mkdir -p "$DEST_DIR"
+# condor does NOT create its own log/output/error directories, and a missing one leaves the
+# jobs held rather than running -- which looks exactly like "the jobs are hanging"
+mkdir -p "$FETCH_LOG_DIR"
 
 total=0
 already=0

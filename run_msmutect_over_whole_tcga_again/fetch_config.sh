@@ -21,10 +21,24 @@
 # column -- UNREAD_LIST may carry a tab-separated reason alongside each name.
 : "${FETCH_LIST:=fetch_list.txt}"
 
-# ssh must be non-interactive: a condor job has no tty, so a password prompt would hang the
-# job until it is evicted rather than fail. BatchMode makes it exit immediately instead.
+# condor writes each job's stdout/stderr here; it will NOT create the directory itself, and
+# a missing one leaves jobs held instead of running
+: "${WORK_ROOT:=/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again}"
+: "${FETCH_LOG_DIR:=$WORK_ROOT/logs/fetch}"
+
+# ssh must be non-interactive AND must not be able to hang:
+#   BatchMode            - no tty in a condor job, so a password prompt could never be
+#                          answered; fail immediately instead of blocking until eviction
+#   ConnectTimeout       - caps time spent ESTABLISHING the connection
+#   ServerAliveInterval/CountMax - caps a connection that establishes and then STALLS.
+#                          Without these a dead peer mid-transfer hangs scp forever, which
+#                          is the usual reason these jobs sit running and never finish.
 : "${SSH_KEY:=}"                      # optional: path to the private key to use
-: "${SSH_OPTS:=-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30}"
+: "${SSH_OPTS:=-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4}"
+
+# hard backstop on a single transfer, in seconds. ServerAliveInterval catches a dead peer;
+# this catches a peer that is alive but pathologically slow. 0 disables.
+: "${FETCH_TIMEOUT:=3600}"
 
 # verify each recovered .gz actually decompresses. These are replacements for files the
 # filesystem could not read, so "it transferred" is not the same as "it is good".

@@ -57,7 +57,18 @@ echo "scp opts: $SSH_OPTS ${SSH_KEY:+-i $SSH_KEY}"
 # status of the negation), so the real exit code is lost -- and a failed job would report
 # success to condor.
 rc=0
-scp -p $SSH_OPTS ${SSH_KEY:+-i "$SSH_KEY"} "$REMOTE_HOST:$SRC" "$PARTIAL" || rc=$?
+if [ "${FETCH_TIMEOUT:-0}" != "0" ] && command -v timeout >/dev/null 2>&1; then
+    timeout --signal=TERM --kill-after=30 "$FETCH_TIMEOUT" \
+        scp -p $SSH_OPTS ${SSH_KEY:+-i "$SSH_KEY"} "$REMOTE_HOST:$SRC" "$PARTIAL" || rc=$?
+else
+    scp -p $SSH_OPTS ${SSH_KEY:+-i "$SSH_KEY"} "$REMOTE_HOST:$SRC" "$PARTIAL" || rc=$?
+fi
+if [ "$rc" -eq 124 ]; then
+    rm -f "$PARTIAL"
+    echo "ERROR: $NAME timed out after ${FETCH_TIMEOUT}s -- the transfer stalled." >&2
+    echo "       Raise FETCH_TIMEOUT if the file is genuinely huge or the link is slow." >&2
+    exit 124
+fi
 if [ "$rc" -ne 0 ]; then
     rm -f "$PARTIAL"
     echo "ERROR: scp failed (exit $rc) for $NAME" >&2
