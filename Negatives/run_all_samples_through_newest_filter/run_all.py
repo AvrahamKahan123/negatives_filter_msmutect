@@ -1,58 +1,58 @@
 import argparse
-import os
-
-import pandas as pd
 
 import config
 import download_samples
 import run_yossi_filter_on_old
-import rerun_msmutect_from_file
+from Negatives.run_all_samples_through_newest_filter import rerun_msmutect_from_file
 import compare_old_vs_new
 import ssh_connection
-from results_postprocessing.NoisyLocusDB import NoisyLocusDB
 
-# Runs the full pipeline described in Plan.md, one sample at a time so at most one
-# sample's *.full.mut.tsv.gz is ever being downloaded/processed at once:
-#   1. download the sample's filt + full files
+# Runs the pipeline described in Plan.md over one or more samples, in this process:
+#   1. make sure the sample's filt + full files are present (download if not)
 #   2. run the old filt file through yossi_filter()
 #   3. rerun the newest MSMuTect on the full file via --from_file
 #   4. compare the old vs. new (raw + yossi_filter'd) mutation sets
 #
+# This is also the per-sample unit of work that run_parallel.py spawns -- it invokes
+#     python run_all.py --samples <ONE_SAMPLE> --skip-summary
+# once per sample, concurrently. Each sample writes only its own files (step 4 saves a
+# per-sample row via compare_old_vs_new.save_row), so concurrent workers never collide;
+# run_parallel.py builds summary.tsv from those rows once they have all finished.
+#
 # Run `conda activate genomics` first (pandas/numpy/pysam/scipy all live there).
 #
-# Your SSH password is asked for exactly once, on the first transfer: every download
-# shares one SSH connection (see ssh_connection.py), which outlives the individual
-# rsyncs and the long MSMuTect runs in between them.
+# Prefer running download_all.py before this: with everything already local, the pipeline
+# needs no network at all and cannot stall on an expired SSH connection.
+
+
+def run_sample(sample: str, force: bool = False) -> dict:
+    print(f"\n===== {sample} =====")
+    download_samples.download_filt(sample, force=force)
+    run_yossi_filter_on_old.run_one(sample)
+    rerun_msmutect_from_file.run_sample(sample, force=force)
+    row = compare_old_vs_new.compare_one(sample)
+    compare_old_vs_new.save_row(row)
+    return row
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--samples", nargs="+", default=config.SAMPLES)
     parser.add_argument("--force", action="store_true", help="redo every step even if outputs already exist")
+    parser.add_argument("--skip-summary", action="store_true",
+                         help="do not write summary.tsv (set by run_parallel.py, which writes it "
+                              "once after every worker has finished)")
     parser.add_argument("--close-ssh", action="store_true",
-                         help="close the shared SSH connection when the pipeline finishes, instead of "
-                              "leaving it open for a follow-up run (it expires on its own either way)")
+                         help="close the shared SSH connection when finished")
     args = parser.parse_args()
 
-    noisy_db = NoisyLocusDB()
     for sample in args.samples:
-        print(f"\n===== {sample} =====")
-        download_samples.download_filt(sample, force=args.force)
-        run_yossi_filter_on_old.run_one(sample)
-        rerun_msmutect_from_file.run_sample(sample, force=args.force)
+        run_sample(sample, force=args.force)
 
-    print("\n===== comparison =====")
-    rows = [compare_old_vs_new.compare_one(sample, noisy_db) for sample in args.samples]
-
-    os.makedirs(config.COMPARISON_DIR, exist_ok=True)
-    summary_fp = os.path.join(config.COMPARISON_DIR, "summary.tsv")
-    pd.DataFrame(rows).to_csv(summary_fp, sep="\t", index=False)
-    print(f"\nsummary -> {summary_fp}")
-
-    overall_ok = all(r["RAW_SUBSET_OK"] and r["YOSSI_SUBSET_OK"] for r in rows)
-    print("OVERALL: " + ("PASS -- newest MSMuTect's mutations are a subset of the old version's for every sample"
-                          if overall_ok else
-                          "FAIL -- see *.raw_violations.tsv / *.yossi_violations.tsv for the offending loci"))
+    if not args.skip_summary:
+        print("\n===== summary =====")
+        compare_old_vs_new.summarize(args.samples)
 
     if args.close_ssh:
         ssh_connection.close_master()

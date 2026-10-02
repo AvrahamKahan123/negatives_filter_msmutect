@@ -1,4 +1,4 @@
-import operator, os, time, sys
+import operator, os, time
 from collections import defaultdict
 from dataclasses import dataclass
 
@@ -7,11 +7,11 @@ import multiprocessing as mp
 import numpy as np
 import pandas as pd
 
-from cancer_data import load_all_samples_gib, load_all_samples, load_test_samples, data_directory, results_directory
-from create_purity_db import DB_connection, Locus, connect_to_purity_db
+from cancer_data import load_all_samples_gib, load_all_samples, load_test_samples, results_directory
+from create_purity_db import DB_connection, Locus
 from enums import COLUMN, MSI_CLASSIFICATION
-from SamplesDB import SamplesDB, Sample, SamplesSet
-from results_postprocessing.NoisyLocusDB import NoisyLocusDB
+from SamplesDB import Sample, SamplesSet
+from converting_from_old_format_to_new.NoisyLocusDB import NoisyLocusDB
 
 
 def column_headers(prefix: str, thresholds: List[Union[float, int]]) -> List[str]:

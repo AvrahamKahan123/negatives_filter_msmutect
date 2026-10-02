@@ -1,8 +1,8 @@
 import sys, os
 from typing import Dict
 
-from SamplesDB import SamplesDB, Sample
-from enums import MSI_CLASSIFICATION
+from results_postprocessing.SamplesDB import SamplesDB, Sample
+from results_postprocessing.enums import MSI_CLASSIFICATION
 
 
 

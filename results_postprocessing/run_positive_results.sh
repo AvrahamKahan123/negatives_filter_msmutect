@@ -1,0 +1,1 @@
+/mnt/c/Users/avrah/MaruvkaLab/MSMuTect_4/msmutect.sh -A -m -N /mnt/c/Users/avrah/MaruvkaLab/post_processing_code_for_australians/data/positives/TCGA-AP-A05N_all.hist.tsv -T /mnt/c/Users/avrah/MaruvkaLab/post_processing_code_for_australians/data/positives/tumor_0.35purity.hist.tsv -O tst  -f --from_file

@@ -19,6 +19,7 @@ cumsum = np.array(row_cumulative_sum(xs))
 print(cumsum)
 print(cumsum[4])
 np.save("p_mut_map.npy", cumsum)
+
 # print(x.shape)
 # print(x.sum(axis=1))
 # for i in range(len(x)):

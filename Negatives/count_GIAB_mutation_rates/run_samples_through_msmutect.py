@@ -1,93 +1,46 @@
-import os, csv, glob, subprocess
-import time
-from typing import List
+"""Re-run MSMuTect from file over the GIAB sample set.
 
-# Re-runs MSMuTect on GIAB samples "from file": each input is a .full.mut.tsv,
-# which already contains the per-locus normal and tumor histograms. We slice a
-# pseudo-normal and pseudo-tumor histogram back out of it (same cuts as the
-# MSMuTect from_file E2E test) and feed them to msmutect --from_file, which
-# recomputes the calls. For same-sample GIAB pairs this measures the mutation
-# (false-positive) rate.
-#
-#     cut -f1-19       IN > <name>.pseudo_normal.hist.tsv
-#     cut -f1-6,29-41  IN > <name>.pseudo_tumor.hist.tsv
-#     msmutect.sh -N <normal> -T <tumor> -m -A -O <name> --from_file
+A thin caller of layer 3 (`run_on_directory`) with the GIAB paths filled in. For same-sample
+GIAB pairs the resulting mutation calls are false positives, so this measures the FPR.
 
-MSMUTECT_SH = "/home/avraham/MaruvkaLab/MSMuTect/msmutect.sh"
+This used to carve the histograms itself with HARDCODED column positions:
 
-# 1-indexed columns of a .full.mut.tsv that make up each pseudo-histogram.
-# (The filtered GIAB files carry 4 extra trailing columns, but the normal/tumor
-# histogram blocks stay at these positions, so the cuts are unchanged.)
-NORMAL_HIST_COLUMNS: List[int] = list(range(1, 20))                       # 1-19
-TUMOR_HIST_COLUMNS: List[int] = list(range(1, 7)) + list(range(29, 42))  # 1-6, 29-41
+    cut -f1-19       IN > <name>.pseudo_normal.hist.tsv
+    cut -f1-6,29-41  IN > <name>.pseudo_tumor.hist.tsv
 
+which silently produces the wrong histograms the moment a column is added or reordered --
+and it could not add KNOWN_GERMLINE_VARIANT at all, so it cannot feed current MSMuTect. The
+pyramid selects columns by NAME instead, so it survives schema changes.
 
-def cut_columns(source: str, columns: List[int], destination: str):
-    # cross-platform `cut -f<columns>`
-    with open(source, newline="") as src, open(destination, "w", newline="\n") as dst:
-        reader = csv.reader(src, delimiter="\t")
-        writer = csv.writer(dst, delimiter="\t", lineterminator="\n")
-        for row in reader:
-            writer.writerow([row[column - 1] for column in columns])
+Inputs must already carry KNOWN_GERMLINE_VARIANT; add it with
+converting_from_old_format_to_new/convert_old_msmutect_file_to_new.py.
+"""
+
+import argparse
+
+from running_from_file import run_on_directory
+
+INPUT_DIR = "/data/gib_files_filtered"
+OUTPUT_DIR = "/results/filtered_through_msmutect_directly"
+PATTERN = "*.filtered.full.mut.tsv"
 
 
-def sample_name(fp: str) -> str:
-    name = os.path.basename(fp)
-    for suffix in (".filtered.full.mut.tsv", ".full.mut.tsv"):
-        if name.endswith(suffix):
-            return name[: -len(suffix)]
-    return os.path.splitext(name)[0]
+def main():
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--input-dir", default=INPUT_DIR)
+    parser.add_argument("--output-dir", default=OUTPUT_DIR)
+    parser.add_argument("--pattern", nargs="+", default=[PATTERN])
+    parser.add_argument("--workers", type=int, default=run_on_directory.DEFAULT_WORKERS)
+    parser.add_argument("--force", action="store_true", help="re-run even if the output exists")
+    args = parser.parse_args()
 
-
-def run_sample_through_msmutect(fp: str,
-                                outdir="/home/avraham/MaruvkaLab/msmutect_postprocessing/results/filtered_through_msmutect_directly") -> str:
-    os.makedirs(outdir, exist_ok=True)
-    name = sample_name(fp)
-
-    # 1. carve the pseudo-normal / pseudo-tumor histograms out of the one input file
-    normal_hist = os.path.join(outdir, f"{name}.pseudo_normal.hist.tsv")
-    tumor_hist = os.path.join(outdir, f"{name}.pseudo_tumor.hist.tsv")
-    cut_columns(fp, NORMAL_HIST_COLUMNS, normal_hist)
-    cut_columns(fp, TUMOR_HIST_COLUMNS, tumor_hist)
-
-    # 2. recompute calls from those histograms with msmutect --from_file
-    output_prefix = os.path.join(outdir, name)
-    command = [
-        MSMUTECT_SH,
-        "-N", normal_hist,
-        "-T", tumor_hist,
-        "-m", "-A",
-        "-O", output_prefix,
-        "--from_file",
-        "-f",  # overwrite on re-run
-    ]
-    result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise RuntimeError(f"msmutect from_file run failed ({result.returncode}) for {fp}\n"
-                           f"command: {' '.join(command)}\nstderr:\n{result.stderr}")
-    output_file = output_prefix + ".full.mut.tsv"
-    if not os.path.exists(output_file):
-        raise RuntimeError(f"expected output not created: {output_file}")
-    os.remove(normal_hist)
-    os.remove(tumor_hist)
-    return output_file
-
-
-def run_dir_through_msmutect():
-    dir_path = "/home/avraham/MaruvkaLab/msmutect_postprocessing/data/gib_files_filtered"
-    pattern = "*.filtered.full.mut.tsv"
-    for fp in glob.glob(os.path.join(dir_path, pattern)):
-        st = time.time()
-        run_sample_through_msmutect(fp)
-        e=time.time()
-        print(f"Ran: {os.path.basename(fp)} in {e-st}")
+    results = run_on_directory.run_directory(args.input_dir, args.output_dir,
+                                             patterns=tuple(args.pattern),
+                                             workers=args.workers, force=args.force)
+    if any(produced is None for produced, _ in results.values()):
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
-    # all
-    run_dir_through_msmutect()
-
-    # single test case
-    # test_file = "/home/avraham/MaruvkaLab/msmutect_postprocessing/data/gib_files_filtered/hg001_normal0_tumor0.filtered.full.mut.tsv"
-    # output_file = run_sample_through_msmutect(test_file)
-    # print("wrote:", output_file)
+    main()

@@ -1,0 +1,10 @@
+cut -f1-3 hg001_normal0_tumor0.filtered.full.mut.tsv > 10.txt
+cut -f1-3 hg001_normal1_tumor1.filtered.full.mut.tsv > 11.txt
+cut -f1-3 hg002_normal0_tumor0.filtered.full.mut.tsv > 20.txt
+cut -f1-3 hg002_normal1_tumor1.filtered.full.mut.tsv > 21.txt
+cut -f1-3 hg003_normal0_tumor0.filtered.full.mut.tsv > 30.txt
+cut -f1-3 hg003_normal1_tumor1.filtered.full.mut.tsv > 31.txt
+cut -f1-3 hg004_normal0_tumor0.filtered.full.mut.tsv > 40.txt
+cut -f1-3 hg004_normal1_tumor1.filtered.full.mut.tsv > 41.txt
+cut -f1-3 HG005_normal0_tumor0.filtered.full.mut.tsv > 50.txt
+cut -f1-3 HG005_normal1_tumor1.filtered.full.mut.tsv > 51.txt

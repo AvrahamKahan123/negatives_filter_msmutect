@@ -1,6 +1,8 @@
 *
 !*/
+!*.sh
 !*.py
 !.gitignore
+!*.sub
 .idea
 positives_simulation/MSMuTect_4/
