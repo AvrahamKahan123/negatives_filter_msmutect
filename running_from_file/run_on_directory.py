@@ -23,7 +23,7 @@ import time
 
 from running_from_file import run_single_sample, split_histograms
 
-DEFAULT_PATTERNS = ("*.full.mut.tsv", "*.full.mut.tsv.gz")
+DEFAULT_PATTERNS = ("*.full.mut.tsv", "*.full.mut.tsv.gz", "*.filt.mut.tsv", "*.filt.mut.tsv.gz")
 DEFAULT_WORKERS = 6
 
 

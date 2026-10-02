@@ -1,0 +1,30 @@
+# Step 3: re-call with the current MSMuTect via --from_file.
+#   <work_root>/filtered_wgermline/$(sample)... -> <work_root>/msmutect_results/$(sample)...
+#
+#   python -m run_msmutect_over_whole_tcga_again.make_job_lists --step 3
+#   condor_submit step3_msmutect.sub
+#
+# --from_file is single-core by design, so one cpu per job and many jobs is the right shape.
+# Runtime is dominated by the mutation loci (~6.6 ms each), so expect roughly half an hour
+# to a couple of hours per sample depending on its mutation count.
+#
+# Needs MSMuTect's own environment (numpy/scipy/pysam): msmutect.sh runs whichever python3
+# is on PATH, and getenv=true means that is the environment you submitted from. Activate it
+# BEFORE condor_submit.
+
+universe     = vanilla
+getenv       = true
+ShouldTransferFiles = No
+initialdir   = .
+
+executable   = run_job.sh
+arguments    = run_msmutect_from_file $(sample)
+
+log    = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/step3/$(sample).log
+output = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/step3/$(sample).out
+error  = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/step3/$(sample).err
+
+RequestMemory = 2GB
+request_cpus  = 1
+
+queue sample from jobs/step3_msmutect.txt

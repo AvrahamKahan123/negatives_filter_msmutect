@@ -1,0 +1,11 @@
+universe = vanilla
+getenv = true
+ShouldTransferFiles=No
+initialdir = .
+log = generic.log
+error = generic.err
+output = generic.out
+executable =
+RequestMemory = 1GB
+request_cpus = 1
+queue

@@ -1,0 +1,25 @@
+# Step 2: add KNOWN_GERMLINE_VARIANT (converting_from_old_format_to_new).
+#   <work_root>/filtered/$(sample)... -> <work_root>/filtered_wgermline/$(sample)...
+#
+#   python -m run_msmutect_over_whole_tcga_again.make_job_lists --step 2
+#   condor_submit step2_germline.sub
+#
+# MEMORY: each job loads NoisyLocusDB (~3.5M loci in a python set), so this step needs far
+# more than the other two. 3GB is deliberate -- at 1GB the jobs are killed.
+
+universe     = vanilla
+getenv       = true
+ShouldTransferFiles = No
+initialdir   = .
+
+executable   = run_job.sh
+arguments    = add_germline $(sample)
+
+log    = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/step2/$(sample).log
+output = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/step2/$(sample).out
+error  = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/step2/$(sample).err
+
+RequestMemory = 3GB
+request_cpus  = 1
+
+queue sample from jobs/step2_germline.txt

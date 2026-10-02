@@ -1,0 +1,19 @@
+{
+  "SAMPLE": "TCGA-A6-5661",
+  "OLD_MUTATIONS": 833273,
+  "NEW_MUTATIONS": 636754,
+  "RAW_SUBSET_OK": false,
+  "RAW_VIOLATIONS": 27,
+  "OLD_YOSSI_FILTERED": 638503,
+  "NEW_YOSSI_FILTERED": 636754,
+  "YOSSI_SUBSET_OK": false,
+  "YOSSI_VIOLATIONS": 33,
+  "NEW_CALL_No Alleles (AN)": 769369,
+  "NEW_CALL_Failed Fisher Test (FFT)": 25678,
+  "NEW_CALL_Insufficient Support (INS)": 308880,
+  "NEW_CALL_Loss of Heterozygosity (LOH)": 67,
+  "NEW_CALL_M (Mutation)": 636754,
+  "NEW_CALL_Not Mutation (NM)": 25951179,
+  "NEW_CALL_Reversion to Reference (RR)": 11470,
+  "NEW_CALL_Too Many Alleles (TMA)": 2010
+}

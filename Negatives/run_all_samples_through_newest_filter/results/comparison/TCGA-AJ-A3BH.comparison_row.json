@@ -1,0 +1,19 @@
+{
+  "SAMPLE": "TCGA-AJ-A3BH",
+  "OLD_MUTATIONS": 690375,
+  "NEW_MUTATIONS": 519883,
+  "RAW_SUBSET_OK": false,
+  "RAW_VIOLATIONS": 23,
+  "OLD_YOSSI_FILTERED": 521086,
+  "NEW_YOSSI_FILTERED": 519883,
+  "YOSSI_SUBSET_OK": false,
+  "YOSSI_VIOLATIONS": 26,
+  "NEW_CALL_No Alleles (AN)": 7488635,
+  "NEW_CALL_Failed Fisher Test (FFT)": 15625,
+  "NEW_CALL_Insufficient Support (INS)": 229421,
+  "NEW_CALL_Loss of Heterozygosity (LOH)": 10010,
+  "NEW_CALL_M (Mutation)": 519883,
+  "NEW_CALL_Not Mutation (NM)": 19413731,
+  "NEW_CALL_Reversion to Reference (RR)": 8253,
+  "NEW_CALL_Too Many Alleles (TMA)": 19849
+}

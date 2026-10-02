@@ -1,0 +1,19 @@
+{
+  "SAMPLE": "TCGA-FI-A2D4",
+  "OLD_MUTATIONS": 600740,
+  "NEW_MUTATIONS": 445739,
+  "RAW_SUBSET_OK": false,
+  "RAW_VIOLATIONS": 4,
+  "OLD_YOSSI_FILTERED": 447818,
+  "NEW_YOSSI_FILTERED": 445739,
+  "YOSSI_SUBSET_OK": false,
+  "YOSSI_VIOLATIONS": 9,
+  "NEW_CALL_No Alleles (AN)": 730477,
+  "NEW_CALL_Failed Fisher Test (FFT)": 15239,
+  "NEW_CALL_Insufficient Support (INS)": 215628,
+  "NEW_CALL_Loss of Heterozygosity (LOH)": 8640,
+  "NEW_CALL_M (Mutation)": 445739,
+  "NEW_CALL_Not Mutation (NM)": 26258389,
+  "NEW_CALL_Reversion to Reference (RR)": 14104,
+  "NEW_CALL_Too Many Alleles (TMA)": 17191
+}

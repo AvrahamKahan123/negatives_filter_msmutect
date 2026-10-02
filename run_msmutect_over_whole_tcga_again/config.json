@@ -1,0 +1,20 @@
+{
+  "_comment": "Cluster paths for the whole-TCGA from_file rerun. Every path the jobs need is here; nothing is hardcoded in the scripts. Any value may be overridden at submit time with an environment variable of the same name upper-cased, e.g. WORK_ROOT=/somewhere/else.",
+
+  "input_dir": "/storage/bfe_maruvka/gaiafr/Research_project/WGS_SNVs_indels_analysis_project/MS_Analysis/Google_Cloud_MSMuTect_final_output_new_May2025_run",
+  "input_suffix": ".full.mut.tsv.gz",
+
+  "work_root": "/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again",
+
+  "_msmutect_path": "Absolute path to msmutect.sh ON THE CLUSTER. Step 3 fails fast with a clear message if this is wrong.",
+  "msmutect_path": "/storage/bfe_maruvka/avrahamk/MSMuTect/msmutect.sh",
+
+  "_repo_root": "Checkout of msmutect_postprocessing, needed to import converting_from_old_format_to_new (step 2) and running_from_file (step 3). null = the parent of this directory, which is right when the jobs run from the checkout.",
+  "repo_root": null,
+
+  "_gzip_intermediates": "Write filtered/ and filtered_wgermline/ as .gz. Everything downstream reads .gz transparently.",
+  "gzip_intermediates": true,
+
+  "_delete_filtered_after_germline": "Remove a sample's filtered/ file once it has been converted, so only filtered_wgermline/ and msmutect_results/ persist.",
+  "delete_filtered_after_germline": false
+}

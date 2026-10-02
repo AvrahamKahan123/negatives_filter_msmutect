@@ -2,6 +2,7 @@
 !*/
 !*.sh
 !*.py
+!*.json
 !.gitignore
 !*.sub
 .idea
