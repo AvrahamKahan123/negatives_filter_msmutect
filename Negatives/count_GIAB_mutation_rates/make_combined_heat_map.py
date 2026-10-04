@@ -387,10 +387,10 @@ def publication_heat_map(per_locus: bool = True, exclude_hg005: bool = True,
 
 def main():
     # per callable base (original) and per callable locus (new)
-    for per_locus in (False, True):
-        combined_heat_map(exclude_hg005=False, per_locus=per_locus)
-        combined_heat_map(exclude_hg005=True, per_locus=per_locus)
-        combined_heat_maps_side_by_side(per_locus=per_locus)
+    # for per_locus in (False, True):
+    #     combined_heat_map(exclude_hg005=False, per_locus=per_locus)
+    #     combined_heat_map(exclude_hg005=True, per_locus=per_locus)
+    #     combined_heat_maps_side_by_side(per_locus=per_locus)
     publication_heat_map(per_locus=True)
 
 

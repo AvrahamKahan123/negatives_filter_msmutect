@@ -19,7 +19,8 @@ log    = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)
 output = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/step2/$(sample).out
 error  = $ENV(WORK_ROOT:/storage/bfe_maruvka/avrahamk/run_over_whole_tcga_again)/logs/step2/$(sample).err
 
-RequestMemory = 3GB
+RequestMemory = 1GB
 request_cpus  = 1
+max_materialize = 300
 
 queue sample from jobs/step2_germline.txt

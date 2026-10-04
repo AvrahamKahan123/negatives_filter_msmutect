@@ -1,0 +1,51 @@
+# Purity sweep: one job per sample, each writing all 19 purities + the normal histogram.
+#
+#   <input_dir>/$(sample).full.mutated_only.mut.tsv
+#       -> <output_dir>/$(sample)_1x_<purity>purity.hist.tsv   (19 of them)
+#       -> <output_dir>/$(sample)_1x.normal.hist.tsv           (one, shared by all 19)
+#
+#   conda activate genomics        # mix_histograms.py needs numpy
+#   ./submit_mix.sh
+#
+# Submit through submit_mix.sh, NOT `condor_submit mix_histograms.sub` directly: condor
+# does not create the log/output/error directory, and holds every job instantly if it
+# cannot open those files. The wrapper creates it first.
+#
+# The 5 samples are listed inline at the bottom, so there is no job list file to regenerate.
+#
+# Overridable at submit time (getenv = true passes your shell through to the jobs):
+#   OUTPUT_DIR=/somewhere/else condor_submit mix_histograms.sub
+#   FORCE=1 condor_submit mix_histograms.sub       # redo purities that already exist
+#   REPLICATES=3 condor_submit mix_histograms.sub  # 3 re-sampled draws per locus
+#
+# Resubmitting is safe by default: finished purity files are skipped, so a job that is
+# evicted partway resumes rather than restarting the sweep.
+
+universe     = vanilla
+getenv       = true
+ShouldTransferFiles = No
+initialdir   = .
+
+executable   = run_mix_job.sh
+arguments    = $(sample)
+
+log    = $ENV(LOG_DIR:/storage/bfe_maruvka/avrahamk/positives_simulation/logs/mix)/$(sample).log
+output = $ENV(LOG_DIR:/storage/bfe_maruvka/avrahamk/positives_simulation/logs/mix)/$(sample).out
+error  = $ENV(LOG_DIR:/storage/bfe_maruvka/avrahamk/positives_simulation/logs/mix)/$(sample).err
+
+# mix_histograms streams the input a line at a time and buffers 100k output lines, so
+# memory is flat in the file size. 1GB is already generous.
+RequestMemory = 1GB
+request_cpus  = 1
+
+# Each job re-reads its input once per purity (19 passes) and writes ~19x its size. For a
+# ~800k-mutation sample that is roughly half an hour and a bit over a gigabyte of output.
+# Only 5 jobs, so no max_materialize cap is needed.
+
+queue sample in (
+    TCGA-A6-5661
+    TCGA-AJ-A3BH
+    TCGA-AP-A05N
+    TCGA-FI-A2D4
+    TCGA-OR-A5LB
+)

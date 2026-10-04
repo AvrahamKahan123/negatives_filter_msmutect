@@ -72,6 +72,35 @@ after a partial batch, just re-run `make_job_lists` and re-submit — repeat unt
 0 jobs. Nothing is recomputed. `--include-done` lists everything regardless; `FORCE=1
 condor_submit ...` makes the jobs themselves redo finished samples.
 
+### Where the sample names come from
+
+Each step enumerates **the directory it reads**, not the original `input_dir`:
+
+| Step | Enumerates |
+|------|-----------|
+| 1 filter | `input_dir` |
+| 2 germline | `<work_root>/filtered` |
+| 3 msmutect | `<work_root>/filtered_wgermline` |
+
+This matters because samples can enter the pipeline sideways. A sample whose original is
+unreadable on the source storage is recovered to `unread/` and filtered by `filter_unread.py`
+— from step 2 onwards it is an ordinary sample, but it is **not** in `input_dir`'s listing.
+Enumerating `input_dir` for every step would silently drop it from the rest of the run.
+
+Override when you need to:
+
+```bash
+--from-file PATH   # one sample name or filename per line ('#' comments and a
+                   # trailing "<TAB>reason" column are both tolerated)
+--from-dir  PATH   # every sample with a file in this directory
+--samples   A B C  # these samples, named outright
+--all-steps-from-input-dir   # the old behaviour: input_dir drives all three steps
+```
+
+`--all-steps-from-input-dir` is still useful as a *cross-check*: it reports how many samples
+are "not ready" for a step, which the per-step default cannot — the default simply doesn't
+know about a sample until its input exists.
+
 Logs go to `<work_root>/logs/step<N>/<sample>.{log,out,err}`.
 
 ## Resources

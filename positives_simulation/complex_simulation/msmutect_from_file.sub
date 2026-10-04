@@ -1,0 +1,44 @@
+# Call mutations on every simulated pair: 5 samples x 19 purities = 95 jobs in parallel.
+#
+#   <mixed_dir>/$(sample)_1x.normal.hist.tsv        (normal, shared by all 19 purities)
+#   <mixed_dir>/$(sample)_1x_$(purity)purity.hist.tsv
+#       -> <results_dir>/$(sample)_1x_$(purity)purity.full.mut.tsv
+#                                              ... .full.mutated_only.mut.tsv
+#                                              ... .full.call_counts.tsv
+#
+#   conda activate genomics        # msmutect.sh runs whichever python3 is on PATH
+#   ./submit_msmutect.sh
+#
+# Submit through submit_msmutect.sh, NOT `condor_submit` directly: it builds the job list
+# and creates the log directory. Condor cannot create the log/output/error directory and
+# holds every job instantly if it cannot open those files.
+#
+# Overridable at submit time (getenv = true passes your shell through to the jobs):
+#   MIXED_DIR  RESULTS_DIR  LOG_DIR  REPLICATES  MSMUTECT  READ_LEVEL  FORCE
+#
+# Resubmitting is safe: a pair whose .full.mut.tsv already exists is skipped (FORCE=1 to
+# redo), so a batch that lost a few jobs can simply be submitted again.
+
+universe     = vanilla
+getenv       = true
+ShouldTransferFiles = No
+initialdir   = .
+
+executable   = run_msmutect_job.sh
+arguments    = $(sample) $(purity)
+
+log    = $ENV(LOG_DIR:/storage/bfe_maruvka/avrahamk/positives_simulation/logs/msmutect)/$(sample)_$(purity).log
+output = $ENV(LOG_DIR:/storage/bfe_maruvka/avrahamk/positives_simulation/logs/msmutect)/$(sample)_$(purity).out
+error  = $ENV(LOG_DIR:/storage/bfe_maruvka/avrahamk/positives_simulation/logs/msmutect)/$(sample)_$(purity).err
+
+# --from_file holds one locus at a time plus the noise table; 2GB matches step 3 of
+# run_msmutect_over_whole_tcga_again, which does the same work on the same scale.
+RequestMemory = 2GB
+request_cpus  = 1
+
+# All 19 jobs of a sample read the SAME normal histogram at once, and /storage has
+# returned Input/output errors under load before (see step1_filter.sub). 95 concurrent
+# readers is modest, but if EIO shows up in the .err files, cap it here -- e.g. 40.
+# max_materialize = 40
+
+queue sample,purity from jobs/msmutect_from_file.txt

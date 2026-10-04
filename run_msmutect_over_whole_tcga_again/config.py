@@ -42,6 +42,11 @@ REPO_ROOT = setting("repo_root") or os.path.dirname(THIS_DIR)
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
+# copies recovered from the backup host for samples the main storage could not read
+# (fetch_one_unread.sh). They are byte-identical in shape to the originals in INPUT_DIR,
+# so they feed step 1 exactly the same way -- see filter_unread.py.
+UNREAD_DIR = os.path.join(WORK_ROOT, "unread")
+
 # the three output directories named in Plan.md
 FILTERED_DIR = os.path.join(WORK_ROOT, "filtered")
 FILTERED_WGERMLINE_DIR = os.path.join(WORK_ROOT, "filtered_wgermline")

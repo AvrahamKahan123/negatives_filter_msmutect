@@ -40,8 +40,14 @@ def _open_write(path: str, gzipped: bool):
     return open(path, "w", newline="")
 
 
-def filter_sample(sample: str, force: bool = False, quiet: bool = False) -> str:
-    source = config.source_path(sample)
+def filter_sample(sample: str, force: bool = False, quiet: bool = False,
+                  source: str = None) -> str:
+    """Filter one sample to <work_root>/filtered/.
+
+    `source` defaults to the sample's file in input_dir; filter_unread.py passes the
+    recovered copy in unread/ instead, so both paths share this one implementation.
+    """
+    source = source or config.source_path(sample)
     destination = config.filtered_path(sample)
     state, detail = config.path_state(source)
     if state == config.UNREADABLE:

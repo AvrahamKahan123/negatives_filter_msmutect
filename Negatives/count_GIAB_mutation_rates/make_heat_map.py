@@ -13,11 +13,12 @@ ZERO_COLOR = "#969696"    # callable, but zero mutations (a measured zero, not m
 
 MAX_PATTERN_LEN = 15
 #MUTATED_FILES_DIR = "/home/avraham/MaruvkaLab/msmutect_postprocessing/results/filtered_through_msmutect_directly"
-MUTATED_FILES_DIR = "/home/avraham/MaruvkaLab/msmutect_postprocessing/results/gib_filtered_through_newest_msmutect"
+# MUTATED_FILES_DIR = "/home/avraham/MaruvkaLab/msmutect_postprocessing/results/gib_filtered_through_newest_msmutect"
+MUTATED_FILES_DIR="/home/avraham/MaruvkaLab/msmutect_postprocessing/Negatives/count_GIAB_mutation_rates/results/with_fisher_fixed"
 
 MUTATED_PATTERN = "*.full.mutated_only.mut.tsv"
 COUNTED_DIR = "/home/avraham/MaruvkaLab/msmutect_postprocessing/results/callable_counts"
-HEATMAP_DIR = "/home/avraham/MaruvkaLab/msmutect_postprocessing/results/mutation_density_heatmaps_9_17"
+HEATMAP_DIR = "/home/avraham/MaruvkaLab/msmutect_postprocessing/results/mutation_density_heatmaps_10_2"
 
 
 def to_int(value) -> int:
@@ -134,10 +135,15 @@ def count_file_for(mutated_fp: str) -> str:
     # mutated: hg001_normal0_tumor0.full.mutated_only.mut.tsv
     # count:   HG001_msmutect_normal0_tumor0.count.txt
     key = sample_name(mutated_fp).lower()
+    key_no_suffix = key[:key.find(".")]
     for count_fp in glob.glob(os.path.join(COUNTED_DIR, "*.count.txt")):
-        count_key = os.path.basename(count_fp).replace(".count.txt", "").replace("msmutect_", "").lower()
-        if count_key == key:
+        filename = os.path.basename(count_fp)
+        count_sample_name = filename[:filename.find(".")].lower()
+        if count_sample_name == key_no_suffix:
             return count_fp
+        # count_key = os.path.basename(count_fp).replace(".count.txt", "").replace("msmutect_", "").lower()
+        # if count_key == key:
+        #     return count_fp
     return ""
 
 
